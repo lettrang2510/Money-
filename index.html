@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hoàn Tiền Shopee - Nhận 70% Hoa Hồng</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+  <div class="max-w-md mx-auto p-4 pb-12">
+    <!-- Header Thống kê ví -->
+    <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white p-6 rounded-3xl shadow-lg text-center mt-4">
+      <h1 class="text-2xl font-bold">Shopee Cashback</h1>
+      <p class="text-xs mt-1 opacity-90">Hoàn lại 70% hoa hồng mua sắm cho bạn</p>
+      
+      <div class="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-red-400/50">
+        <div>
+          <span class="text-xs opacity-80 block">Chờ duyệt</span>
+          <p id="pendingBal" class="text-xl font-extrabold">0 đ</p>
+        </div>
+        <div>
+          <span class="text-xs opacity-80 block">Có thể rút</span>
+          <p id="availableBal" class="text-xl font-extrabold text-yellow-300">0 đ</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hộp công cụ tạo link -->
+    <div class="bg-white p-5 rounded-3xl shadow-sm mt-4 border border-gray-100">
+      <label class="font-semibold block mb-2 text-sm text-gray-700">Dán link sản phẩm Shopee:</label>
+      <input id="productUrl" type="text" placeholder="https://shopee.vn/product/..." 
+             class="w-full p-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm bg-gray-50">
+      
+      <button onclick="generateLink()" id="genBtn"
+              class="w-full mt-3 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-2xl shadow-md transition transform active:scale-95">
+        Tạo Link Hoàn Tiền Ngay
+      </button>
+
+      <!-- Khung hiển thị kết quả -->
+      <div id="resultBox" class="hidden mt-4 p-4 bg-orange-50 border border-orange-200 rounded-2xl text-center">
+        <p class="text-xs text-green-700 font-semibold mb-2">✨ Đã tạo link thành công kèm mã định danh!</p>
+        <a id="buyNowBtn" href="#" target="_blank" 
+           class="inline-block w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3 rounded-xl shadow-md text-sm">
+          BẤM ĐỂ MỞ SHOPEE MUA HÀNG
+        </a>
+        <p class="text-xs text-gray-500 mt-2">Lưu ý: Mua hàng trực tiếp sau khi bấm để không mất lượt hoàn tiền.</p>
+      </div>
+    </div>
+
+    <!-- Thông tin trạng thái kết nối -->
+    <div class="text-center mt-6">
+      <p id="statusMsg" class="text-xs text-gray-400">Đang kết nối hệ thống...</p>
+    </div>
+  </div>
+
+  <script>
+    // Cấu hình kết nối Supabase của bạn
+    const SUPABASE_URL = 'https://qycxrimzwrqpqoynxqmn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_S2_RPZamJ4wzBztkA4KxpQ_O6yLDMJl';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const MY_AFFILIATE_ID = '17308280124';
+    let currentUserId = null;
+
+    // Tự động đăng nhập ẩn danh khi khách vào web để lấy ID định danh
+    async function initAuth() {
+      try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUserId = session.user.id;
+        } else {
+          const { data, error: signInError } = await supabaseClient.auth.signInAnonymously();
+          if (signInError) throw signInError;
+          currentUserId = data.user.id;
+        }
+        document.getElementById('statusMsg').innerText = "Hệ thống sẵn sàng hoạt động ✔️";
+        loadUserData();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('statusMsg').innerText = "Lỗi kết nối cơ sở dữ liệu!";
+      }
+    }
+
+    // Tải thông tin số dư của user
+    async function loadUserData() {
+      if (!currentUserId) return;
+      let { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUserId)
+        .single();
+
+      if (!data) {
+        // Nếu chưa có profile thì tạo mới dòng dữ liệu
+        await supabaseClient.from('profiles').insert([{ id: currentUserId }]);
+      } else {
+        document.getElementById('pendingBal').innerText = Number(data.pending_balance || 0).toLocaleString() + ' đ';
+        document.getElementById('availableBal').innerText = Number(data.available_balance || 0).toLocaleString() + ' đ';
+      }
+    }
+
+    // Xử lý tạo link hoàn tiền
+    async function generateLink() {
+      const urlInput = document.getElementById('productUrl').value.trim();
+      if (!urlInput || !urlInput.includes('shopee.vn')) {
+        alert('Vui lòng dán đúng đường dẫn sản phẩm Shopee!');
+        return;
+      }
+
+      if (!currentUserId) {
+        alert('Đang kết nối hệ thống, vui lòng thử lại sau 2 giây!');
+        return;
+      }
+
+      // Tạo mã Sub_ID ngắn gọn từ 8 ký tự đầu của User ID
+      const shortSubId = currentUserId.substring(0, 8);
+      const encodedUrl = encodeURIComponent(urlInput);
+      
+      // Ghép link chuẩn Shopee Affiliate
+      const finalLink = `https://shope.ee/an_redir?origin_link=${encodedUrl}&affiliate_id=${MY_AFFILIATE_ID}&sub_id=${shortSubId}`;
+
+      // Lưu lịch sử vào bảng cashbacks trên Supabase
+      try {
+        await supabaseClient.from('cashbacks').insert([{
+          user_id: currentUserId,
+          sub_id: shortSubId,
+          original_url: urlInput,
+          affiliate_url: finalLink,
+          status: 'PENDING'
+        }]);
+      } catch (e) {
+        console.error("Lỗi lưu lịch sử:", e);
+      }
+
+      // Hiển thị kết quả ra giao diện
+      document.getElementById('buyNowBtn').href = finalLink;
+      document.getElementById('resultBox').classList.remove('hidden');
+    }
+
+    // Khởi chạy khi load trang
+    window.onload = initAuth;
+  </script>
+</body>
+</html>
