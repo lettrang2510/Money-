@@ -261,11 +261,9 @@
         .from('profiles')
         .select('*')
         .eq('id', currentUserId)
-        .single();
+        .maybeSingle();
 
-      if (!data) {
-        await supabaseClient.from('profiles').insert([{ id: currentUserId }]);
-      } else {
+      if (data) {
         document.getElementById('pendingBal').innerText = Number(data.pending_balance || 0).toLocaleString('vi-VN') + ' đ';
         document.getElementById('availableBal').innerText = Number(data.available_balance || 0).toLocaleString('vi-VN') + ' đ';
         
@@ -276,8 +274,12 @@
       }
     }
 
+    // HÀM LƯU TÀI KHOẢN DÙNG UPSERT (CHẮC CHẮN LƯU THÀNH CÔNG VÀO DATABASE)
     async function saveBankInfo() {
-      if (!currentUserId) return;
+      if (!currentUserId) {
+        alert('Hệ thống đang kết nối tài khoản, bạn vui lòng đợi 2 giây rồi bấm lại nhé!');
+        return;
+      }
       const bankName = document.getElementById('bankName').value.trim();
       const bankAccount = document.getElementById('bankAccount').value.trim();
       const accountName = document.getElementById('accountName').value.trim();
@@ -288,22 +290,22 @@
         return;
       }
 
-      const { error } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from('profiles')
-        .update({
+        .upsert({
+          id: currentUserId,
           bank_name: bankName,
           bank_account: bankAccount,
           account_name: accountName,
           phone: phone
-        })
-        .eq('id', currentUserId);
+        }, { onConflict: 'id' });
 
       if (!error) {
         const msg = document.getElementById('saveMsg');
         msg.classList.remove('hidden');
         setTimeout(() => msg.classList.add('hidden'), 3500);
       } else {
-        alert('Lỗi lưu thông tin: ' + error.message);
+        alert('Lỗi lưu: ' + error.message);
       }
     }
 
