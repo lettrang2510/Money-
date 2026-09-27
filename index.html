@@ -2,62 +2,222 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hoàn Tiền Shopee - Nhận 70% Hoa Hồng</title>
-  <!-- Tailwind CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Shopee Cashback - Hoàn Tiền Mua Sắm Thông Minh</title>
+  <!-- Google Fonts & Tailwind CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            shopee: {
+              DEFAULT: '#ee4d2d',
+              dark: '#d03b1e',
+              light: '#ff6433',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+    }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-800">
-  <div class="max-w-md mx-auto p-4 pb-12">
-    <!-- Header Thống kê ví -->
-    <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white p-6 rounded-3xl shadow-lg text-center mt-4">
-      <h1 class="text-2xl font-bold">Shopee Cashback</h1>
-      <p class="text-xs mt-1 opacity-90">Hoàn lại 70% hoa hồng mua sắm cho bạn</p>
-      
-      <div class="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-red-400/50">
-        <div>
-          <span class="text-xs opacity-80 block">Chờ duyệt</span>
-          <p id="pendingBal" class="text-xl font-extrabold">0 đ</p>
+<body class="font-sans antialiased text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <!-- Vùng chứa App chính -->
+  <div class="w-full max-w-md mx-auto px-4 pt-4 pb-8 space-y-4">
+    
+    <!-- Top Bar -->
+    <div class="flex items-center justify-between py-2">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-shopee to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-3.74-1.47-3.74-3.27 0-1.76 1.34-2.95 3.02-3.34V4h2.67v1.86c1.68.37 2.82 1.5 2.92 3.19h-1.93c-.11-.93-.72-1.67-2.31-1.67-1.6 0-2.31.78-2.31 1.54 0 .76.54 1.38 2.57 1.88 2.64.64 3.84 1.56 3.84 3.48 0 1.77-1.32 3.03-3.16 3.34z"/></svg>
         </div>
         <div>
-          <span class="text-xs opacity-80 block">Có thể rút</span>
-          <p id="availableBal" class="text-xl font-extrabold text-yellow-300">0 đ</p>
+          <h2 class="text-base font-extrabold text-slate-900 leading-tight">Shopee Cashback</h2>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="statusIndicator" class="text-[11px] font-medium text-slate-500">Đang đồng bộ ví...</span>
+          </div>
+        </div>
+      </div>
+      <span class="text-xs bg-orange-100 text-shopee font-bold px-2.5 py-1 rounded-full border border-orange-200">Hoàn 70%</span>
+    </div>
+
+    <!-- Thẻ Ví Tiền (Fintech Card) -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#ff5330] via-shopee to-[#df3312] p-6 text-white shadow-xl shadow-orange-500/25">
+      <div class="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
+      <div class="absolute -left-6 -bottom-6 w-28 h-28 rounded-full bg-black/10 blur-lg pointer-events-none"></div>
+
+      <div class="relative z-10 flex justify-between items-center pb-4 border-b border-white/15">
+        <span class="text-xs tracking-wider font-medium uppercase text-white/80">Số dư hoàn tiền của bạn</span>
+        <span class="text-xs bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full font-semibold text-white">VNĐ</span>
+      </div>
+
+      <div class="relative z-10 grid grid-cols-2 gap-4 pt-4">
+        <div>
+          <span class="text-xs text-white/70 block mb-0.5">Chờ đối soát</span>
+          <p id="pendingBal" class="text-2xl font-extrabold tracking-tight">0 đ</p>
+        </div>
+        <div class="border-l border-white/15 pl-4">
+          <span class="text-xs text-amber-200 font-semibold block mb-0.5">Có thể rút ngay</span>
+          <p id="availableBal" class="text-2xl font-extrabold text-yellow-300 tracking-tight">0 đ</p>
         </div>
       </div>
     </div>
 
-    <!-- Hộp công cụ tạo link -->
-    <div class="bg-white p-5 rounded-3xl shadow-sm mt-4 border border-gray-100">
-      <label class="font-semibold block mb-2 text-sm text-gray-700">Dán link sản phẩm Shopee:</label>
-      <input id="productUrl" type="text" placeholder="https://shopee.vn/product/..." 
-             class="w-full p-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm bg-gray-50">
-      
+    <!-- Banner thời gian thanh toán nổi bật -->
+    <div class="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/70 rounded-2xl p-3.5 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl bg-orange-500/10 text-shopee flex items-center justify-center font-bold text-sm shrink-0">
+        ⏱️
+      </div>
+      <p class="text-xs text-slate-700 leading-snug">
+        <span class="font-bold text-shopee">Lưu ý thanh toán:</span> Tiền hoàn sẽ được thanh toán sau <span class="font-bold text-slate-900">3 ngày</span> kể từ ngày đơn hàng được giao thành công.
+      </p>
+    </div>
+
+    <!-- Công cụ tạo Link Hoàn Tiền -->
+    <div class="glass-card rounded-3xl p-5 shadow-sm border border-slate-200/80">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-7 h-7 rounded-xl bg-orange-50 text-shopee flex items-center justify-center font-bold text-sm">
+          🔗
+        </div>
+        <h3 class="font-bold text-slate-800 text-sm">Tạo Link Nhận Tiền Mua Hàng</h3>
+      </div>
+
+      <div class="relative">
+        <input id="productUrl" type="text" 
+               placeholder="Dán link sản phẩm Shopee tại đây..." 
+               class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-shopee/40 focus:border-shopee focus:bg-white transition duration-200 placeholder:text-slate-400">
+        <button onclick="pasteClipboard()" title="Dán nhanh"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-shopee hover:bg-orange-50 rounded-xl transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </button>
+      </div>
+
       <button onclick="generateLink()" id="genBtn"
-              class="w-full mt-3 bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-2xl shadow-md transition transform active:scale-95">
-        Tạo Link Hoàn Tiền Ngay
+              class="w-full mt-3.5 bg-gradient-to-r from-shopee to-shopee-light hover:brightness-105 active:scale-[0.98] text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-shopee/25 transition duration-150 flex items-center justify-center gap-2 text-sm">
+        <span>⚡</span> Tạo Link Hoàn Tiền Ngay
       </button>
 
-      <!-- Khung hiển thị kết quả -->
-      <div id="resultBox" class="hidden mt-4 p-4 bg-orange-50 border border-orange-200 rounded-2xl text-center">
-        <p class="text-xs text-green-700 font-semibold mb-2">✨ Đã tạo link thành công kèm mã định danh!</p>
+      <!-- Khung kết quả bật lên sau khi tạo link -->
+      <div id="resultBox" class="hidden mt-4 p-4 bg-orange-50/80 border border-orange-200/80 rounded-2xl text-center space-y-3 transition duration-300">
+        <div class="flex items-center justify-center gap-1 text-xs font-bold text-emerald-700">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Gắn mã hoàn tiền thành công!
+        </div>
         <a id="buyNowBtn" href="#" target="_blank" 
-           class="inline-block w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-3 rounded-xl shadow-md text-sm">
-          BẤM ĐỂ MỞ SHOPEE MUA HÀNG
+           class="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-black text-white font-bold py-3.5 rounded-xl shadow-md text-sm transition transform active:scale-95">
+          <span>Mở Shopee Mua Hàng Ngay</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </a>
-        <p class="text-xs text-gray-500 mt-2">Lưu ý: Mua hàng trực tiếp sau khi bấm để không mất lượt hoàn tiền.</p>
+        <div class="bg-white/80 p-2.5 rounded-xl border border-orange-200 text-left text-[11px] text-slate-600 space-y-1">
+          <p>👉 Mua trực tiếp sau khi bấm để hệ thống ghi nhận hoa hồng vào ví.</p>
+          <p class="font-semibold text-shopee">📅 Tiền hoàn sẽ được thanh toán sau 3 ngày kể từ ngày đơn hàng được giao thành công.</p>
+        </div>
       </div>
     </div>
 
-    <!-- Thông tin trạng thái kết nối -->
-    <div class="text-center mt-6">
-      <p id="statusMsg" class="text-xs text-gray-400">Đang kết nối hệ thống...</p>
+    <!-- Hướng dẫn 3 bước cực dễ -->
+    <div class="grid grid-cols-3 gap-2 px-1">
+      <div class="bg-white p-3 rounded-2xl border border-slate-200/60 text-center">
+        <span class="w-6 h-6 rounded-full bg-orange-100 text-shopee text-xs font-bold flex items-center justify-center mx-auto mb-1">1</span>
+        <p class="text-[11px] font-semibold text-slate-700">Dán link</p>
+        <p class="text-[9px] text-slate-400">Chọn đồ từ Shopee</p>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-slate-200/60 text-center">
+        <span class="w-6 h-6 rounded-full bg-orange-100 text-shopee text-xs font-bold flex items-center justify-center mx-auto mb-1">2</span>
+        <p class="text-[11px] font-semibold text-slate-700">Bấm mua</p>
+        <p class="text-[9px] text-slate-400">Qua link đã tạo</p>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-slate-200/60 text-center">
+        <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold flex items-center justify-center mx-auto mb-1">3</span>
+        <p class="text-[11px] font-semibold text-slate-700">Sau 3 ngày</p>
+        <p class="text-[9px] text-slate-400">Giao xong nhận tiền</p>
+      </div>
     </div>
+
+    <!-- Thẻ cài đặt tài khoản ngân hàng -->
+    <div class="glass-card rounded-3xl p-5 shadow-sm border border-slate-200/80">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
+            💳
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm">Tài Khoản Rút Tiền</h3>
+            <p class="text-[11px] text-slate-400">Nhập 1 lần - Tự động ghi nhớ</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">Ngân hàng thụ hưởng</label>
+          <input id="bankName" type="text" placeholder="VD: MB Bank, Vietcombank, Techcombank..." 
+                 class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white transition">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Số tài khoản (STK)</label>
+            <input id="bankAccount" type="text" placeholder="Nhập số tài khoản" 
+                   class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white transition">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Họ tên chủ thẻ</label>
+            <input id="accountName" type="text" placeholder="NGUYEN VAN A" 
+                   class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">Số điện thoại / Zalo nhận tin</label>
+          <input id="userPhone" type="text" placeholder="09xxxxxxxx" 
+                 class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white transition">
+        </div>
+
+        <button onclick="saveBankInfo()"
+                class="w-full mt-2 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-1.5 border border-slate-200">
+          <span>💾</span> Lưu Thông Tin Nhận Tiền
+        </button>
+
+        <p id="saveMsg" class="text-xs text-center text-emerald-600 font-semibold hidden">
+          ✔️ Đã lưu thông tin tài khoản thành công!
+        </p>
+
+        <p class="text-[11px] text-slate-400 text-center pt-2 border-t border-slate-100">
+          🔒 Tiền hoàn sẽ được tự động chuyển về tài khoản này sau 3 ngày kể từ khi đơn hàng giao thành công.
+        </p>
+      </div>
+    </div>
+
   </div>
 
+  <!-- Footer -->
+  <footer class="text-center py-4 text-[11px] text-slate-400">
+    Hệ thống hoàn tiền Shopee tự động • Phiên bản 1.0
+  </footer>
+
   <script>
-    // Cấu hình kết nối Supabase của bạn
     const SUPABASE_URL = 'https://qycxrimzwrqpqoynxqmn.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_S2_RPZamJ4wzBztkA4KxpQ_O6yLDMJl';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -65,26 +225,35 @@
     const MY_AFFILIATE_ID = '17308280124';
     let currentUserId = null;
 
-    // Tự động đăng nhập ẩn danh khi khách vào web để lấy ID định danh
-    async function initAuth() {
+    async function pasteClipboard() {
       try {
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
-        if (session) {
-          currentUserId = session.user.id;
-        } else {
-          const { data, error: signInError } = await supabaseClient.auth.signInAnonymously();
-          if (signInError) throw signInError;
-          currentUserId = data.user.id;
-        }
-        document.getElementById('statusMsg').innerText = "Hệ thống sẵn sàng hoạt động ✔️";
-        loadUserData();
-      } catch (err) {
-        console.error(err);
-        document.getElementById('statusMsg').innerText = "Lỗi kết nối cơ sở dữ liệu!";
+        const text = await navigator.clipboard.readText();
+        if (text) document.getElementById('productUrl').value = text;
+      } catch (e) {
+        alert('Vui lòng cấp quyền truy cập bảng tạm hoặc dán thủ công!');
       }
     }
 
-    // Tải thông tin số dư của user
+    async function initAuth() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUserId = session.user.id;
+        } else {
+          const { data, error } = await supabaseClient.auth.signInAnonymously();
+          if (error) throw error;
+          currentUserId = data.user.id;
+        }
+        document.getElementById('statusIndicator').innerText = "Hệ thống đã sẵn sàng";
+        document.getElementById('statusIndicator').className = "text-[11px] font-medium text-emerald-600";
+        loadUserData();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('statusIndicator').innerText = "Lỗi kết nối máy chủ";
+        document.getElementById('statusIndicator').className = "text-[11px] font-medium text-red-500";
+      }
+    }
+
     async function loadUserData() {
       if (!currentUserId) return;
       let { data, error } = await supabaseClient
@@ -94,35 +263,65 @@
         .single();
 
       if (!data) {
-        // Nếu chưa có profile thì tạo mới dòng dữ liệu
         await supabaseClient.from('profiles').insert([{ id: currentUserId }]);
       } else {
-        document.getElementById('pendingBal').innerText = Number(data.pending_balance || 0).toLocaleString() + ' đ';
-        document.getElementById('availableBal').innerText = Number(data.available_balance || 0).toLocaleString() + ' đ';
+        document.getElementById('pendingBal').innerText = Number(data.pending_balance || 0).toLocaleString('vi-VN') + ' đ';
+        document.getElementById('availableBal').innerText = Number(data.available_balance || 0).toLocaleString('vi-VN') + ' đ';
+        
+        if (data.bank_name) document.getElementById('bankName').value = data.bank_name;
+        if (data.bank_account) document.getElementById('bankAccount').value = data.bank_account;
+        if (data.account_name) document.getElementById('accountName').value = data.account_name;
+        if (data.phone) document.getElementById('userPhone').value = data.phone;
       }
     }
 
-    // Xử lý tạo link hoàn tiền
+    async function saveBankInfo() {
+      if (!currentUserId) return;
+      const bankName = document.getElementById('bankName').value.trim();
+      const bankAccount = document.getElementById('bankAccount').value.trim();
+      const accountName = document.getElementById('accountName').value.trim();
+      const phone = document.getElementById('userPhone').value.trim();
+
+      if (!bankAccount || !bankName || !accountName) {
+        alert('Vui lòng điền đủ Tên ngân hàng, Số tài khoản và Tên chủ tài khoản!');
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({
+          bank_name: bankName,
+          bank_account: bankAccount,
+          account_name: accountName,
+          phone: phone
+        })
+        .eq('id', currentUserId);
+
+      if (!error) {
+        const msg = document.getElementById('saveMsg');
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3500);
+      } else {
+        alert('Lỗi lưu thông tin: ' + error.message);
+      }
+    }
+
     async function generateLink() {
       const urlInput = document.getElementById('productUrl').value.trim();
       if (!urlInput || !urlInput.includes('shopee.vn')) {
-        alert('Vui lòng dán đúng đường dẫn sản phẩm Shopee!');
+        alert('Vui lòng dán đúng đường dẫn sản phẩm từ Shopee!');
         return;
       }
 
       if (!currentUserId) {
-        alert('Đang kết nối hệ thống, vui lòng thử lại sau 2 giây!');
+        alert('Đang kết nối hệ thống, vui lòng thử lại sau giây lát!');
         return;
       }
 
-      // Tạo mã Sub_ID ngắn gọn từ 8 ký tự đầu của User ID
       const shortSubId = currentUserId.substring(0, 8);
       const encodedUrl = encodeURIComponent(urlInput);
-      
-      // Ghép link chuẩn Shopee Affiliate
       const finalLink = `https://shope.ee/an_redir?origin_link=${encodedUrl}&affiliate_id=${MY_AFFILIATE_ID}&sub_id=${shortSubId}`;
 
-      // Lưu lịch sử vào bảng cashbacks trên Supabase
       try {
         await supabaseClient.from('cashbacks').insert([{
           user_id: currentUserId,
@@ -132,15 +331,13 @@
           status: 'PENDING'
         }]);
       } catch (e) {
-        console.error("Lỗi lưu lịch sử:", e);
+        console.error("Lỗi lưu:", e);
       }
 
-      // Hiển thị kết quả ra giao diện
       document.getElementById('buyNowBtn').href = finalLink;
       document.getElementById('resultBox').classList.remove('hidden');
     }
 
-    // Khởi chạy khi load trang
     window.onload = initAuth;
   </script>
 </body>
