@@ -137,7 +137,7 @@
       </div>
     </div>
 
-    <!-- Hướng dẫn 3 bước cực dễ -->
+    <!-- Hướng dẫn 3 bước -->
     <div class="grid grid-cols-3 gap-2 px-1">
       <div class="bg-white p-3 rounded-2xl border border-slate-200/60 text-center">
         <span class="w-6 h-6 rounded-full bg-orange-100 text-shopee text-xs font-bold flex items-center justify-center mx-auto mb-1">1</span>
@@ -274,7 +274,6 @@
       }
     }
 
-    // HÀM LƯU TÀI KHOẢN DÙNG UPSERT (CHẮC CHẮN LƯU THÀNH CÔNG VÀO DATABASE)
     async function saveBankInfo() {
       if (!currentUserId) {
         alert('Hệ thống đang kết nối tài khoản, bạn vui lòng đợi 2 giây rồi bấm lại nhé!');
@@ -290,7 +289,7 @@
         return;
       }
 
-      const { data, error } = await supabaseClient
+      const { error } = await supabaseClient
         .from('profiles')
         .upsert({
           id: currentUserId,
@@ -311,8 +310,10 @@
 
     async function generateLink() {
       const urlInput = document.getElementById('productUrl').value.trim();
-      if (!urlInput || !urlInput.includes('shopee.vn')) {
-        alert('Vui lòng dán đúng đường dẫn sản phẩm từ Shopee!');
+      
+      // Chấp nhận mọi loại liên kết từ Shopee (cả dạng rút gọn và dạng đầy đủ)
+      if (!urlInput || (!urlInput.includes('shopee.vn') && !urlInput.includes('shp.ee'))) {
+        alert('Vui lòng dán đúng đường dẫn sản phẩm Shopee!');
         return;
       }
 
@@ -325,16 +326,17 @@
       const encodedUrl = encodeURIComponent(urlInput);
       const finalLink = `https://shope.ee/an_redir?origin_link=${encodedUrl}&affiliate_id=${MY_AFFILIATE_ID}&sub_id=${shortSubId}`;
 
-      try {
-        await supabaseClient.from('cashbacks').insert([{
-          user_id: currentUserId,
-          sub_id: shortSubId,
-          original_url: urlInput,
-          affiliate_url: finalLink,
-          status: 'PENDING'
-        }]);
-      } catch (e) {
-        console.error("Lỗi lưu:", e);
+      const { error } = await supabaseClient.from('cashbacks').insert([{
+        user_id: currentUserId,
+        sub_id: shortSubId,
+        original_url: urlInput,
+        affiliate_url: finalLink,
+        status: 'PENDING'
+      }]);
+
+      if (error) {
+        alert('Lỗi ghi nhận lịch sử tạo link: ' + error.message);
+        console.error("Lỗi Supabase:", error);
       }
 
       document.getElementById('buyNowBtn').href = finalLink;
